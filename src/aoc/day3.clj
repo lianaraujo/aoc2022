@@ -34,3 +34,38 @@
 
 (defn sum-all-badges [grouped-list]
   (apply + (map #(get-item-piority (find-duplicated-triplet %)) grouped-list)))
+
+
+;; fred overflow
+
+(defn cut-in-half
+  [s]
+  (let [length (count s)
+        middle (quot length 2)
+        front  (. s substring 0 middle)
+        back   (. s substring middle length)]
+    [front back]))
+
+(defn common-letter
+  [strings]
+  (first (apply clojure.set/intersection (map set strings))))
+
+(def priority (zipmap item-sequence (range 1 53)))
+
+(defn part1 []
+  (transduce 
+   (comp 
+    (map cut-in-half)
+    (map common-letter)
+    (map priority)) 
+   + 0 
+   rucksack-list))
+
+(defn part2 []
+  (transduce 
+   (comp 
+    (partition-all 3)
+    (map common-letter)
+    (map priority)) 
+   + 0 
+   rucksack-list))
