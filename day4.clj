@@ -28,3 +28,28 @@
 (defn count-subset-pairs-with-rule [pairs rule]
   (count (filter #(compare-ranges % rule) pairs)))
 
+;; fred overflow
+
+(defn range-pairs [input]
+  (for [[_ & abxy] (re-seq #"(\d+)-(\d),(\d+)-(\d+)" input)]
+    (mapv parse-long abxy)))
+
+(defn fully-contains?
+  [[a b x y]]
+  (or
+   (<= a x y b)
+   (<= x a b y)))
+
+(defn part1 
+  [input]
+  (count (filter fully-contains? (range-pairs input))))
+
+(defn separate?
+  [[a b x y]]
+  (or
+   (< b x)
+   (< y a)))
+
+(defn part2 
+  [input]
+  (count (remove separate? (range-pairs input))))
