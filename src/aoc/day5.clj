@@ -10,10 +10,6 @@
   [string]
   (flatten (partition 1 4 (drop 1 string))))
 
-(defn index-n-value
-  [list]
-  (let []))
-
 (defn get-box-position
   [box-line]
   (for [x (range 9)
@@ -55,7 +51,6 @@
         (if (stack-empty? stack-map start-key)
           stack-map
           (update-in stack-map [start-key] drop-vec times))]
-    (println removed-boxes)
     (if removed-boxes
       (add-boxes map-without-box end-key (vec (flatten [removed-boxes])))
       stack-map)))
@@ -66,6 +61,52 @@
   (let [[_ move _ start _ end] (clojure.string/split string #" ")]
     [(parse-long move) (parse-long start) (parse-long end)]))
 
+(def parsed-moves (map generate-instruction moves))
+
 (defn final-form [boxes]
   (reduce (fn [stacks [times start end]] (move-box stacks times start end)) boxes
-       (map generate-instruction moves)))
+       (parsed-moves)))
+
+;; fred-overflow
+
+(defn move1 
+  [stacks [n from to]]
+  (loop [source (stacks from)
+         target (stacks to)
+         n      n]
+    (if (pos? n)
+      (recur
+       (pop source)
+       (conj target (peek source))
+       (dec n))
+      (assoc stacks
+             from source
+             to   target))))
+
+(defn part1
+  [stacks moves]
+  (->>
+   (reduce move1 stacks moves)
+   (map peek)
+   (apply str)))
+
+(defn move2 
+  [stacks [n from to]]
+  (loop [source (stacks from)
+         temp   ()
+         n      n]
+    (if (pos? n)
+      (recur
+       (pop source)
+       (conj temp (peek source))
+       (dec n))
+      (assoc stacks
+             from source
+             to   (into (stacks to) temp)))))
+
+(defn part2
+  [stacks moves]
+  (->>
+   (reduce move2 stacks moves)
+   (map peek)
+   (apply str)))
