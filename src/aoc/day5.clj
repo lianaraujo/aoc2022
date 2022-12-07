@@ -69,6 +69,20 @@
 
 ;; fred-overflow
 
+(defn parse-stacks [input]
+  (let [lines (clojure.string/split input #"\n")
+        crates (take-while seq lines)
+        columns (apply mapv str crates)]
+    (into [()]
+          (for [column columns
+                :let [letters (re-find #"[A-Z]+" column)]
+                :when letters]
+            (apply list letters)))))
+
+(defn parse-moves
+  [input]
+  (for [[_ & n-from-to] (re-seq #"move (\d+) from (\d+) to (\d+)" input)]
+    (mapv parse-long n-from-to)))
 (defn move1 
   [stacks [n from to]]
   (loop [source (stacks from)
