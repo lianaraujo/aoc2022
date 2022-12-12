@@ -52,16 +52,16 @@ R 2")
             tail-position))))
 
 (defn get-visited
-  [old-tail new-tail movement]
+  [new-head old-tail new-tail movement]
   (case (movement 0)
     "U" (for [y (range (old-tail 1) (inc (new-tail 1)))
               :let [position (str (new-tail 0) y)]] position)
     "D" (for [y (range (new-tail 1) (inc (old-tail 1)))
               :let [position (str (new-tail 0) y)]] position)
     "L" (for [x (range (new-tail 0) (inc (old-tail 0)))
-              :let [position (str (new-tail 1) x)]] position)
+              :let [position (str x (new-tail 1))]] position)
     "R" (for [x (range (old-tail 0) (inc (new-tail 0)))
-              :let [position (str (new-tail 1) x)]] position)))
+              :let [position (str x (new-tail 1))]] position)))
 
 
 (defn part1
@@ -78,7 +78,80 @@ R 2")
             new-tail (move-tail new-head tail-position movement)
             new-visited (clojure.set/union visited 
                                            (set (get-visited tail-position new-tail movement)))]
-        (println (str "movement" movement "head" head-position " " new-head "tail" tail-position " " new-tail))
         (recur other-moves new-head new-tail new-visited)))))
 
-(part1 example)
+
+;; fred overflow
+
+(defn unroll-directions
+  [input]
+  (for [[_ lrud n] (re-seq #"(L|R|U|D) (\d+)" input)
+        direction (repeat (parse-long n) ({\L [-1 0]
+                                           \R [+1 0]
+                                           \U [0 -1]
+                                           \D [0 +1]} (nth lrud 0)))]
+    direction))
+
+
+(defn plus [[x y] [dx dy]]
+  [(+ x dx) (+ y dy)])
+
+(defn minus [[x1 y1] [x2 y2]]
+  [(- x1 x2) (- y1 y2)])
+
+(def forces1
+  {[-2 0] [-1 0]
+   [+2 0] [+1 0]
+   [0 -2] [0 -1]
+   [0 +2] [0 +1]
+   [-2 -1] [-1 -1]
+   [-2 +1] [-1 +1]
+   [+2 -1] [+1 -1]
+   [+2 +1] [+1 +1]
+   [-1 -2] [-1 -1]
+   [+1 -2] [+1 -1]
+   [-1 +2] [-1 +1]
+   [+1 +2] [+1 +1]})
+
+(defn part1f
+  [input]
+  (loop [head [0 0]
+         tail head
+         visited #{}
+         [direction & directions] (unroll-directions input)]
+    (let [visited (conj visited tail)]
+      (if-not direction
+        (count visited)
+        (let [head (plus head direction)
+              delta (minus head tail)
+              force (forces1 delta)
+              tail (if force (plus tail force) tail)]
+          (recur head tail visited directions))))))
+
+(def force2
+  (assoc forces1
+         [-2 -2] [-1 -1]
+         [-2 +2] [-1 +1]
+         [+2 -2] [+1 -1]
+         [+2 +2] [+1 +1]))
+
+(defn follow
+  [[moved-head first-tail & more-tails :as rope]]
+  (if-not first-tail
+    rope
+    (let [delta (minus moved-head first-tail)
+          force (force2 delta)]
+      (if-not force
+        rope
+        (cons moved-head (follow (cons (plus first-tail force) more-tails)))))))
+
+(defn part2f
+  [input] 
+  (loop [[head & tails] (repeat 10 [0 0])
+         visited #{}
+         [direction & directions] (unroll-directions input)]
+    (let [visited (conj visited (last tails))]
+      (if-not direction
+        (count visited)
+        (let [head (plus head direction)]
+          (recur (follow (cons head tails)) visited directions))))))
